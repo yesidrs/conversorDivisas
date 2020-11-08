@@ -1,4 +1,6 @@
+import 'package:convertidor_divisas/src/widgets/toast.dart';
 import 'package:flutter/material.dart';
+import 'package:convertidor_divisas/src/provider/api.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -6,13 +8,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _CounterPage extends State<HomePage> {
-  String valorMoneda1 = 'Seleccionar moneda';
-  List<String> opcionMonedas = <String>[
+  String coinPrimary = 'Seleccionar moneda';
+  String coinSecond = 'Seleccionar moneda';
+  String quantity;
+  String result = '0';
+
+  final valueController = TextEditingController();
+
+  List<String> coinsOptions = <String>[
     'Seleccionar moneda',
-    'Dolar',
+    'USD',
     'COP',
-    'Euro',
-    'Sol'
+    'EUR',
+    'JPY'
   ];
 
   @override
@@ -62,7 +70,6 @@ class _CounterPage extends State<HomePage> {
   }
 
   Widget _dropdownsCoins() {
-
     final marginTop = EdgeInsets.only(top: 20);
 
     return Container(
@@ -81,13 +88,13 @@ class _CounterPage extends State<HomePage> {
           Container(
             margin: marginTop,
             child: DropdownButton<String>(
-              value: valorMoneda1,
-              items: opcionMonedas.map<DropdownMenuItem<String>>((String value) {
+              value: coinPrimary,
+              items: coinsOptions.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem(value: value, child: Text(value));
               }).toList(),
-              onChanged: (String nuevoValor) {
+              onChanged: (String value) {
                 setState(() {
-                  valorMoneda1 = nuevoValor;
+                  coinPrimary = value;
                 });
               },
             ),
@@ -107,13 +114,13 @@ class _CounterPage extends State<HomePage> {
           Container(
             margin: marginTop,
             child: DropdownButton<String>(
-              value: valorMoneda1,
-              items: opcionMonedas.map<DropdownMenuItem<String>>((String value) {
+              value: coinSecond,
+              items: coinsOptions.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem(value: value, child: Text(value));
               }).toList(),
-              onChanged: (String nuevoValor) {
+              onChanged: (String value) {
                 setState(() {
-                  valorMoneda1 = nuevoValor;
+                  coinSecond = value;
                 });
               },
             ),
@@ -127,8 +134,10 @@ class _CounterPage extends State<HomePage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 50),
       margin: EdgeInsets.symmetric(vertical: 50),
-      child: TextFormField(
-        textCapitalization: TextCapitalization.words,
+      child: TextField(
+        controller: valueController,
+        keyboardType: TextInputType.number,
+        autofocus: false,
         decoration: const InputDecoration(
           border: UnderlineInputBorder(),
           filled: false,
@@ -150,8 +159,13 @@ class _CounterPage extends State<HomePage> {
           'CALCULAR',
           style: TextStyle(fontSize: 17),
         ),
-        onPressed: () {
-          //Aqui se llama al metodo que realiza la logica de negocio
+        onPressed: () async {
+          if (_validateButton()){
+            final amount = await coinConvert(coinPrimary, coinSecond, quantity);
+            setState(() {
+              result = amount.toString();
+            });
+          }
         },
         padding: EdgeInsets.symmetric(vertical: 10, horizontal: 30),
         color: Color.fromRGBO(86, 226, 151, 1),
@@ -160,6 +174,26 @@ class _CounterPage extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  bool _validateButton() {
+    if (coinPrimary == 'Seleccionar moneda' ||
+        coinSecond == 'Seleccionar moneda') {
+      toastError('Seleccione una moneda');
+      return false;
+    } 
+    else if (coinPrimary == coinSecond) {
+      toastError('Las monedas no pueder ser iguales');
+      return false;
+    } 
+    else if (valueController.text.isEmpty) {
+      toastError('Debe agregar un valor');
+      return false;
+    } 
+    else {
+      quantity = valueController.text;
+      return true;
+    }
   }
 
   Widget _result() {
@@ -182,8 +216,8 @@ class _CounterPage extends State<HomePage> {
           Container(
             margin: EdgeInsets.only(top: 20),
             child: Text(
-              '130.000',
-              style: TextStyle(fontSize: 80),
+              '$result',
+              style: TextStyle(fontSize: 50),
             ),
           )
         ],
